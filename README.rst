@@ -16,8 +16,18 @@ as follows:
 
 ::
 
+    import asyncio
+
     from feedfinder2 import find_feeds
-    feeds = find_feeds("xkcd.com")
+
+
+    async def main():
+        feeds = await find_feeds("cnews.ru/")
+        print(feeds)
+
+
+    if __name__ == "__main__":
+        asyncio.run(main())
 
 Now, ``feeds`` is the list: ``['http://xkcd.com/atom.xml',
 'http://xkcd.com/rss.xml']``. There is some attempt made to rank feeds from
