@@ -15,6 +15,8 @@ if not __FEEDFINDER2_SETUP__:
 
     import logging
     import requests
+    import aiohttp
+
     from bs4 import BeautifulSoup
     from six.moves.urllib import parse as urlparse
 
@@ -37,14 +39,17 @@ class FeedFinder(object):
         self.user_agent = user_agent
         self.timeout = timeout
 
-    def get_feed(self, url):
+    async def get_feed(self, url):
         try:
-            r = requests.get(url, headers={"User-Agent": self.user_agent}, timeout=self.timeout)
+            #r = requests.get(url, headers={"User-Agent": self.user_agent}, timeout=self.timeout)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, ssl=False) as response:
+                    return await response.text()
         except Exception as e:
             logging.warn("Error while getting '{0}'".format(url))
             logging.warn("{0}".format(e))
             return None
-        return r.text
+        #return r.text
 
     def is_feed_data(self, text):
         data = text.lower()
@@ -52,8 +57,8 @@ class FeedFinder(object):
             return False
         return data.count("<rss")+data.count("<rdf")+data.count("<feed")
 
-    def is_feed(self, url):
-        text = self.get_feed(url)
+    async def is_feed(self, url):
+        text = await self.get_feed(url)
         if text is None:
             return False
         return self.is_feed_data(text)
@@ -67,14 +72,14 @@ class FeedFinder(object):
                        ["rss", "rdf", "xml", "atom", "feed"]))
 
 
-def find_feeds(url, check_all=False, user_agent=None, timeout=None):
+async def find_feeds(url, check_all=False, user_agent=None, timeout=None):
     finder = FeedFinder(user_agent=user_agent, timeout=timeout)
 
     # Format the URL properly.
     url = coerce_url(url)
 
     # Download the requested URL.
-    text = finder.get_feed(url)
+    text = await finder.get_feed(url)
     if text is None:
         return []
 
