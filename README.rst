@@ -8,6 +8,12 @@ Pilgrim <http://en.wikipedia.org/wiki/Mark_Pilgrim_(software_developer)>`_ and
 subsequently maintained by `Aaron
 Swartz <http://en.wikipedia.org/wiki/Aaron_Swartz>`_ until his untimely death.
 
+Installation
+-----
+
+
+    pip install -U git+https://github.com/qDes/feedfinder2.git#egg=feedfinder2
+
 Usage
 -----
 
