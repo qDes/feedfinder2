@@ -22,6 +22,12 @@ if not __FEEDFINDER2_SETUP__:
     from async_timeout import timeout
 
 
+async def async_filter(async_pred, iterable):
+    for item in iterable:
+        should_yield = await async_pred(item)
+        if should_yield:
+            yield item
+
 
 def coerce_url(url):
     url = url.strip()
@@ -105,7 +111,11 @@ async def find_feeds(url, check_all=False, user_agent=None, timeout=None):
             links.append(urlparse.urljoin(url, link.get("href", "")))
 
     # Check the detected links.
-    urls = list(filter(finder.is_feed, links))
+    
+    #urls = list(async_filter(finder.is_feed, links))
+    
+    urls = [i async for i in async_filter(finder.is_feed, links)]
+    
     logging.info("Found {0} feed <link> tags.".format(len(urls)))
     if len(urls) and not check_all:
         return sort_urls(urls)
@@ -124,14 +134,14 @@ async def find_feeds(url, check_all=False, user_agent=None, timeout=None):
 
     # Check the local URLs.
     local = [urlparse.urljoin(url, l) for l in local]
-    urls += list(filter(finder.is_feed, local))
+    urls += [i async for i in async_filter(finder.is_feed, local)]
     logging.info("Found {0} local <a> links to feeds.".format(len(urls)))
     if len(urls) and not check_all:
         return sort_urls(urls)
 
     # Check the remote URLs.
     remote = [urlparse.urljoin(url, l) for l in remote]
-    urls += list(filter(finder.is_feed, remote))
+    urls += [i async for i in async_filter(finder.is_feed, remote)]
     logging.info("Found {0} remote <a> links to feeds.".format(len(urls)))
     if len(urls) and not check_all:
         return sort_urls(urls)
@@ -139,8 +149,8 @@ async def find_feeds(url, check_all=False, user_agent=None, timeout=None):
     # Guessing potential URLs.
     fns = ["atom.xml", "index.atom", "index.rdf", "rss.xml", "index.xml",
            "index.rss"]
-    urls += list(filter(finder.is_feed, [urlparse.urljoin(url, f)
-                                         for f in fns]))
+    urls += [i async for i in async_filter(finder.is_feed, [urlparse.urljoin(url, f)
+                                         for f in fns])]
     return sort_urls(urls)
 
 
