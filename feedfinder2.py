@@ -90,7 +90,10 @@ async def find_feeds(url, check_all=False, user_agent=None, timeout=None):
     url = coerce_url(url)
 
     # Download the requested URL.
-    text, status = await finder.get_feed(url)
+    try:
+        text, status = await finder.get_feed(url)
+    except TypeError:
+        return []
     if status != 200 and text is None:
         return []
 
