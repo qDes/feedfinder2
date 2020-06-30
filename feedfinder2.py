@@ -19,6 +19,8 @@ if not __FEEDFINDER2_SETUP__:
 
     from bs4 import BeautifulSoup
     from six.moves.urllib import parse as urlparse
+    from async_timeout import timeout
+
 
 
 def coerce_url(url):
@@ -41,10 +43,13 @@ class FeedFinder(object):
 
     async def get_feed(self, url):
         try:
+            async with timeout(self.timeout):
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(url, ssl=False) as response:
+                        status = response.status
+                        text = await response.text()
+                        return text, status
             #r = requests.get(url, headers={"User-Agent": self.user_agent}, timeout=self.timeout)
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url, ssl=False) as response:
-                    return await response.text()
         except Exception as e:
             logging.warn("Error while getting '{0}'".format(url))
             logging.warn("{0}".format(e))
@@ -58,8 +63,8 @@ class FeedFinder(object):
         return data.count("<rss")+data.count("<rdf")+data.count("<feed")
 
     async def is_feed(self, url):
-        text = await self.get_feed(url)
-        if text is None:
+        text, status = await self.get_feed(url)
+        if status != 200 and text is None:
             return False
         return self.is_feed_data(text)
 
@@ -79,8 +84,8 @@ async def find_feeds(url, check_all=False, user_agent=None, timeout=None):
     url = coerce_url(url)
 
     # Download the requested URL.
-    text = await finder.get_feed(url)
-    if text is None:
+    text, status = await finder.get_feed(url)
+    if status != 200 and text is None:
         return []
 
     # Check if it is already a feed.
