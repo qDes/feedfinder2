@@ -69,7 +69,10 @@ class FeedFinder(object):
         return data.count("<rss")+data.count("<rdf")+data.count("<feed")
 
     async def is_feed(self, url):
-        text, status = await self.get_feed(url)
+        try:
+            text, status = await self.get_feed(url)
+        except TypeError:
+            return False
         if status != 200 and text is None:
             return False
         return self.is_feed_data(text)
